@@ -1,11 +1,12 @@
 [phases.setup]
-nixPkgs = ["python311", "nodejs_20"]
+nixPkgs = ["python311", "nodejs_20", "postgresql"]
 
 [phases.install]
 cmds = [
-  "pip install -r backend/requirements.txt",
-  "cd frontend && npm install && npm run build"
+  "python3 -m pip install --upgrade pip",
+  "python3 -m pip install -r backend/requirements.txt",
+  "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npm install && npm run build"
 ]
 
 [start]
-cmd = "cd backend && python main.py"
+cmd = "cd backend && python3 main.py"
