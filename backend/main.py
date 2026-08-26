@@ -18,9 +18,19 @@ from openpyxl.utils import get_column_letter
 
 from database import engine, SessionLocal, Base
 import models
+import time
 
 # ── Init ──────────────────────────────────────────────────────────────────────
-Base.metadata.create_all(bind=engine)
+for _attempt in range(5):
+    try:
+        Base.metadata.create_all(bind=engine)
+        break
+    except Exception as _e:
+        print(f"DB connect attempt {_attempt+1}/5 failed: {_e}")
+        if _attempt < 4:
+            time.sleep(5)
+        else:
+            raise
 
 app = Flask(__name__, static_folder=None)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
