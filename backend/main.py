@@ -19,18 +19,24 @@ from openpyxl.utils import get_column_letter
 from database import engine, SessionLocal, Base
 import models
 import time
+import threading
 
-# ── Init ──────────────────────────────────────────────────────────────────────
-for _attempt in range(5):
-    try:
-        Base.metadata.create_all(bind=engine)
-        break
-    except Exception as _e:
-        print(f"DB connect attempt {_attempt+1}/5 failed: {_e}")
-        if _attempt < 4:
-            time.sleep(5)
-        else:
-            raise
+# ── Init DB (non-blocking so Flask can start even if DB is slow) ──────────────
+_db_ready = False
+
+def _init_db():
+    global _db_ready
+    for attempt in range(10):
+        try:
+            Base.metadata.create_all(bind=engine)
+            seed()
+            _db_ready = True
+            print(f"✅ Database ready after {attempt+1} attempt(s)")
+            return
+        except Exception as e:
+            print(f"DB connect attempt {attempt+1}/10 failed: {e}")
+            time.sleep(6)
+    print("❌ Could not connect to database after 10 attempts")
 
 app = Flask(__name__, static_folder=None)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -835,7 +841,8 @@ def seed():
     finally:
         db.close()
 
-seed()
+# Start DB init in background thread so Flask can respond immediately
+threading.Thread(target=_init_db, daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

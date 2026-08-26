@@ -13,7 +13,17 @@ sys.path.insert(0, os.path.join(SCRIPT_DIR, "backend"))
 
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
-engine  = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
+
+_db_url = os.environ.get("DATABASE_URL")
+if _db_url:
+    if _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(_db_url, pool_size=5, max_overflow=10, pool_pre_ping=True)
+    print(f"  Using cloud database (Supabase)")
+else:
+    engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
+    print(f"  Using local SQLite: {DB_PATH}")
+
 Session = sessionmaker(bind=engine)
 
 import models
