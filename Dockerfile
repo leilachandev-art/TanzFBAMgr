@@ -20,6 +20,8 @@ COPY backend/ ./backend/
 # Copy built frontend from Stage 1
 COPY --from=frontend-build /frontend/dist ./frontend/dist
 
-# Run from backend directory
-WORKDIR /app/backend
-CMD ["python", "main.py"]
+# Copy and set up startup script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
