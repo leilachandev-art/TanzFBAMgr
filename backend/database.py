@@ -10,7 +10,17 @@ if DATABASE_URL:
     # Fix for providers that use postgres:// instead of postgresql://
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-    engine = create_engine(DATABASE_URL, pool_size=5, max_overflow=10, pool_pre_ping=True)
+    # Add sslmode=require if not already specified (required by Supabase)
+    if "sslmode" not in DATABASE_URL:
+        sep = "&" if "?" in DATABASE_URL else "?"
+        DATABASE_URL = DATABASE_URL + sep + "sslmode=require"
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=5,
+        max_overflow=10,
+        pool_pre_ping=True,
+        connect_args={"sslmode": "require"},
+    )
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     _sqlite_url = f"sqlite:///{os.path.join(BASE_DIR, 'fba.db')}"
